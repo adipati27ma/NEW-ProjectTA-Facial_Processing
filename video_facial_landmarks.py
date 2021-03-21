@@ -45,7 +45,7 @@ while True:
 		# convert the facial landmark (x, y)-coordinates to a NumPy
 		# array
 		shape = predictor(gray, rect)
-		shape = face_utils.shape_to_np(shape)
+		shape = face_utils.shape_to_np(shape)   # sama kyk myPoints[]
 
 		# loop over the (x, y)-coordinates for the facial landmarks
 		# and draw them on the image
