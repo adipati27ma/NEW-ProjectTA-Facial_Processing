@@ -37,8 +37,8 @@ args = vars(ap.parse_args())
 # define two constants, one for the eye aspect ratio to indicate
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold
-EYE_AR_THRESH = 0.3
-EYE_AR_CONSEC_FRAMES = 3
+EYE_AR_THRESH = 0.19		#! for blinks & drownsiness is diff
+EYE_AR_CONSEC_FRAMES = 2		#! for blinks & drownsiness is diff
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
@@ -62,6 +62,7 @@ fileStream = True
 vs = VideoStream(src=0).start()
 # vs = VideoStream(usePiCamera=True).start()
 fileStream = False
+print("[INFO] ok")
 time.sleep(1.0)
 
 # loop over frames from the video stream
@@ -135,6 +136,7 @@ while True:
 
 	# if the `q` key was pressed, break from the loop
 	if key == 27 or key == ord("q"):
+		print("[INFO] exiting...")
 		break
 # do a bit of cleanup
 cv2.destroyAllWindows()
