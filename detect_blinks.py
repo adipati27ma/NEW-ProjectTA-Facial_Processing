@@ -57,8 +57,8 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 
 # start the video stream thread
 print("[INFO] starting video stream thread...")
-vs = FileVideoStream(args["video"]).start()
-fileStream = True
+# vs = FileVideoStream(args["video"]).start()
+# fileStream = True
 vs = VideoStream(src=0).start()
 # vs = VideoStream(usePiCamera=True).start()
 fileStream = False
