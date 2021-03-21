@@ -45,7 +45,7 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.3
+EYE_AR_THRESH = 0.28
 EYE_AR_CONSEC_FRAMES = 48
 # initialize the frame counter as well as a boolean used to
 # indicate if the alarm is going off
@@ -125,7 +125,7 @@ while True:
 						t.deamon = True
 						t.start()
 				# draw an alarm on the frame
-				cv2.putText(frame, "[ALERT] Kantuk Terdeteksi!!", (10, 30),
+				cv2.putText(frame, "DROWNSINESS ALERT!", (10, 30),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 		# otherwise, the eye aspect ratio is not below the blink
 		# threshold, so reset the counter and alarm
