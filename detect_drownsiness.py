@@ -1,6 +1,7 @@
 # import the necessary packages
 from scipy.spatial import distance as dist
 from imutils.video import VideoStream
+from imutils.video import FPS
 from imutils import face_utils
 from threading import Thread
 import numpy as np
@@ -70,12 +71,16 @@ vs = VideoStream(src=args["webcam"]).start()
 print("[INFO] ok")
 time.sleep(1.0)
 
+# Penghitung FPS (Frame per Second)
+fps = FPS().start()
+
 # loop over frames from the video stream
 while True:
 	# grab the frame from the threaded video file stream, resize
 	# it, and convert it to grayscale
 	# channels)
 	frame = vs.read()
+	# cv2.normalize(frame, frame, 0, 255, cv2.NORM_MINMAX)
 	frame = imutils.resize(frame, width=450)
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	# detect faces in the grayscale frame
@@ -151,6 +156,15 @@ while True:
 	if key == 27 or key == ord("q"):
 		print("[INFO] exiting...")
 		break
+
+	# update FPS
+	fps.update()
+
+# tampilkan info FPS
+fps.stop()
+print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
