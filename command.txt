@@ -1,0 +1,2 @@
+Command untuk menjalankan Program :
+py detect_drownsiness.py -p "shape_predictor_68_face_landmarks.dat" -a "Industrial Alarm.wav"
