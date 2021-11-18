@@ -47,7 +47,7 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.3
+EYE_AR_THRESH = 0.29
 EYE_AR_CONSEC_FRAMES = 12 # utk Raspi
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
 # initialize the frame counter as well as a boolean used to
@@ -58,10 +58,12 @@ ALARM_ON = False
 # GPIO Buzzer
 signal1PIN = 27
 signal2PIN = 17
+GreenLED = 22
 # Set PIN to output
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(signal1PIN,GPIO.OUT)
 GPIO.setup(signal2PIN,GPIO.OUT)
+GPIO.setup(GreenLED,GPIO.OUT)
 
 
 # initialize dlib's face detector (HOG-based) and then create
@@ -89,6 +91,7 @@ while True:
 	# grab the frame from the threaded video file stream, resize
 	# it, and convert it to grayscale
 	# channels)
+	GPIO.output(GreenLED,1)
 	frame = vs.read()
 	# cv2.normalize(frame, frame, 0, 255, cv2.NORM_MINMAX)
 	frame = imutils.resize(frame, width=450)
@@ -96,6 +99,13 @@ while True:
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	# detect faces in the grayscale frame
 	rects = detector(gray, 0)
+
+	# check if there's face detected/not
+	if (len(rects) == 0):
+		ALARM_ON = False
+		if ALARM_ON == False :
+			GPIO.output(signal1PIN,0)
+			GPIO.output(signal2PIN,0)
 
   # loop over the face detections
 	for rect in rects:
@@ -124,6 +134,8 @@ while True:
 
     # check to see if the eye aspect ratio is below the blink
 		# threshold, and if so, increment the blink frame counter
+		# if (ear) :
+			# print(ear)
 		if ear < EYE_AR_THRESH:
 			COUNTER += 1
 			# if the eyes were closed for a sufficient number of
@@ -133,7 +145,8 @@ while True:
 				if not ALARM_ON:
 					ALARM_ON = True
 					print('ALARM ON!!!!!!!!!!~~~~~~~~~~~~~~')
-					GPIO.output(signal1PIN,1)
+					if ALARM_ON == True :
+						GPIO.output(signal1PIN,1)
 					# check to see if an alarm file was supplied,
 					# and if so, start a thread to have the alarm
 					# sound played in the background
@@ -151,7 +164,13 @@ while True:
 			COUNTER = 0
 			ALARM_ON = False
 			print('ALARM OFF.')
-			GPIO.output(signal1PIN,0)
+			if ALARM_ON == False :
+				GPIO.output(signal1PIN,0)
+		# else :
+			ALARM_ON = False
+			if ALARM_ON == False :
+				GPIO.output(signal1PIN,0)
+				GPIO.output(signal2PIN,0)
 
 
 
@@ -162,6 +181,7 @@ while True:
 		# thresholds and frame counters
 		cv2.putText(frame, "EAR: {:.3f}".format(ear), (300, 30),
 			cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
 
 	# show the frame
 	cv2.imshow("Frame", frame) # comment if debugging is finish
@@ -181,6 +201,7 @@ print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
 print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
 # do a bit of cleanup
+GPIO.output(GreenLED,0)
 cv2.destroyAllWindows()
 GPIO.cleanup()
 vs.stop()
