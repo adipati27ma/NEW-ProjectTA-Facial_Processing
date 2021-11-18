@@ -1,0 +1,9 @@
+Command untuk menjalankan Program :
+python3 detect_drownsiness.py -p "shape_predictor_68_face_landmarks.dat" -a "Industrial Alarm.wav"
+
+python code_combine.py -p "shape_predictor_68_face_landmarks.dat"
+
+
+
+Laptop FPS : 20-25 (22.7) fps
+Raspi FPS : 5-6.5 fps
