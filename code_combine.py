@@ -13,9 +13,9 @@ import time
 import dlib
 import cv2
 
-def sound_alarm(path):
-	# play an alarm sound
-	playsound.playsound(path)
+# def sound_alarm(path):
+# 	# play an alarm sound
+# 	playsound.playsound(path)
 
 def eye_aspect_ratio(eye):
 	# compute the euclidean distances between the two sets of
@@ -47,9 +47,10 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.29
+EYE_AR_THRESH = 0.28
 EYE_AR_CONSEC_FRAMES = 12 # utk Raspi
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
+EYE_AR_2ND_CONSEC_FRAMES = 15
 # initialize the frame counter as well as a boolean used to
 # indicate if the alarm is going off
 COUNTER = 0
@@ -147,17 +148,15 @@ while True:
 					print('ALARM ON!!!!!!!!!!~~~~~~~~~~~~~~')
 					if ALARM_ON == True :
 						GPIO.output(signal1PIN,1)
-					# check to see if an alarm file was supplied,
-					# and if so, start a thread to have the alarm
-					# sound played in the background
-					# if args["alarm"] != "":
-					# 	t = Thread(target=sound_alarm,
-					# 		args=(args["alarm"],))
-					# 	t.deamon = True
-					# 	t.start()
+					
+					
 				# draw an alarm on the frame
 				cv2.putText(frame, "DROWNSINESS ALERT!", (10, 30),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+				
+				if COUNTER >= EYE_AR_2ND_CONSEC_FRAMES:
+					GPIO.output(signal2PIN,1)
+				
 		# otherwise, the eye aspect ratio is not below the blink
 		# threshold, so reset the counter and alarm
 		else:
