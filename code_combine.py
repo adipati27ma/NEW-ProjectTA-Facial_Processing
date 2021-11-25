@@ -3,7 +3,7 @@ from scipy.spatial import distance as dist
 from imutils.video import VideoStream
 from imutils.video import FPS
 from imutils import face_utils
-from threading import Thread
+import threading
 import numpy as np
 import RPi.GPIO as GPIO
 # import playsound
@@ -31,8 +31,6 @@ def eye_aspect_ratio(eye):
 	return ear
 
 
-
-
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--shape-predictor", required=True,
@@ -50,11 +48,16 @@ args = vars(ap.parse_args())
 EYE_AR_THRESH = 0.28
 EYE_AR_CONSEC_FRAMES = 12 # utk Raspi
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
+
+# pertambahan 0.5 detik = 3 frames --> 12 + 3 = 15
 EYE_AR_2ND_CONSEC_FRAMES = 15
 # initialize the frame counter as well as a boolean used to
 # indicate if the alarm is going off
 COUNTER = 0
 ALARM_ON = False
+ALARM_L2 = False
+threadCreated = False
+threadRunning = False
 
 # GPIO Buzzer
 signal1PIN = 27
@@ -65,6 +68,35 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(signal1PIN,GPIO.OUT)
 GPIO.setup(signal2PIN,GPIO.OUT)
 GPIO.setup(GreenLED,GPIO.OUT)
+
+
+# Functions
+def beep_beep_buzzer(pin):
+	global ALARM_L2
+	while ALARM_L2:
+		GPIO.output(pin,1)
+		time.sleep(0.1)
+		GPIO.output(pin,0)
+		time.sleep(0.1)
+
+def level_2_buzzer_active(signal):
+	global threadCreated
+	global threadRunning
+	global ALARM_L2
+	if signal == 0:
+		GPIO.output(signal2PIN,0)
+		ALARM_L2 = False
+		threadCreated = False
+		threadRunning = False
+	if signal == 1:
+		ALARM_L2 = True
+		GPIO.output(signal1PIN,0)
+		if not threadCreated:
+			beep_thread = threading.Thread(target=beep_beep_buzzer, args=[signal2PIN])
+			threadCreated = True
+		if not threadRunning:
+			beep_thread.start()
+			threadRunning = True
 
 
 # initialize dlib's face detector (HOG-based) and then create
@@ -106,7 +138,8 @@ while True:
 		ALARM_ON = False
 		if ALARM_ON == False :
 			GPIO.output(signal1PIN,0)
-			GPIO.output(signal2PIN,0)
+			level_2_buzzer_active(0)
+			# GPIO.output(signal2PIN,0)
 
   # loop over the face detections
 	for rect in rects:
@@ -145,9 +178,11 @@ while True:
 				# if the alarm is not on, turn it on
 				if not ALARM_ON:
 					ALARM_ON = True
-					print('ALARM ON!!!!!!!!!!~~~~~~~~~~~~~~')
 					if ALARM_ON == True :
+						print('ALARM ON LEVEL 1!!!!!!!!!')
 						GPIO.output(signal1PIN,1)
+						level_2_buzzer_active(0)
+						# GPIO.output(signal2PIN,0)
 					
 					
 				# draw an alarm on the frame
@@ -155,7 +190,9 @@ while True:
 					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 				
 				if COUNTER >= EYE_AR_2ND_CONSEC_FRAMES:
-					GPIO.output(signal2PIN,1)
+					print('ALARM ON~~~~~~~~~~~~~LEVEL 2')
+					level_2_buzzer_active(1)
+					# GPIO.output(signal2PIN,1)
 				
 		# otherwise, the eye aspect ratio is not below the blink
 		# threshold, so reset the counter and alarm
@@ -165,11 +202,8 @@ while True:
 			print('ALARM OFF.')
 			if ALARM_ON == False :
 				GPIO.output(signal1PIN,0)
-		# else :
-			ALARM_ON = False
-			if ALARM_ON == False :
-				GPIO.output(signal1PIN,0)
-				GPIO.output(signal2PIN,0)
+				level_2_buzzer_active(0)
+				# GPIO.output(signal2PIN,0)
 
 
 
