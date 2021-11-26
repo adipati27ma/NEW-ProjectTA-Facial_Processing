@@ -7,3 +7,6 @@ python code_combine.py -p "shape_predictor_68_face_landmarks.dat"
 
 Laptop FPS : 20-25 (22.7) fps ---> 48 frames sekitar 2.2 detik deteksi
 Raspi FPS : 5-6.5 fps ---> 12 frames sekitar 2.2 detik deteksi
+
+
+Data didapat rata2 dalam 2 Detik setelah mengantuk
