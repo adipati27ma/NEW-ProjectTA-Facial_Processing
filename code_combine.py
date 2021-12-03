@@ -51,7 +51,7 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.28
+EYE_AR_THRESH = 0.3
 EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
 
@@ -92,7 +92,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
-aio = "<Your AIO Key>"
+aio = Client('adipati27ma', 'aio_siBs18iQ5tHpkTuiYWeabbttvqi7')
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
@@ -343,6 +343,8 @@ if (wifi_ip is not None):
 				# GPIO.output(signal2PIN,0)
 				GPIO.output(RedLED,0)
 				resetBlynk()
+				cv2.putText(frame, "Tidak Terdeteksi Wajah", (10, 320),
+					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 		# loop over the face detections
 		for rect in rects:
@@ -375,6 +377,8 @@ if (wifi_ip is not None):
 				# print(ear)
 			if ear < EYE_AR_THRESH:
 				COUNTER += 1
+				cv2.putText(frame, "counting...", (10, 320),
+					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 				# if the eyes were closed for a sufficient number of
 				# then sound the alarm
 				if COUNTER >= EYE_AR_CONSEC_FRAMES:
@@ -383,6 +387,8 @@ if (wifi_ip is not None):
 						ALARM_ON = True
 						if ALARM_ON == True :
 							print('ALARM ON LEVEL 1!!!!!!!!!')
+							cv2.putText(frame, "Level : 1", (340, 320),
+								cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 							GPIO.output(signal1PIN,1)
 							level_2_buzzer_active(0)
 							# GPIO.output(signal2PIN,0)
@@ -400,6 +406,8 @@ if (wifi_ip is not None):
 					
 					if COUNTER >= EYE_AR_2ND_CONSEC_FRAMES:
 						print('ALARM ON~~~~~~~~~~~~~LEVEL 2')
+						cv2.putText(frame, "Level : 2", (340, 320),
+							cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 						level_2_buzzer_active(1)
 						# GPIO.output(signal2PIN,1)
 						
@@ -414,6 +422,8 @@ if (wifi_ip is not None):
 				ALARM_ON = False
 				print('ALARM OFF.')
 				if ALARM_ON == False :
+					cv2.putText(frame, "Level : 0", (340, 320),
+						cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 					GPIO.output(signal1PIN,0)
 					level_2_buzzer_active(0)
 					# GPIO.output(signal2PIN,0)
@@ -438,7 +448,7 @@ if (wifi_ip is not None):
 
 
 		# show the frame
-		# cv2.imshow("Frame", frame) # comment if debugging is finish
+		cv2.imshow("Frame", frame) # comment if debugging is finish
 		key = cv2.waitKey(1) & 0xFF
 
 		# if the `q` key was pressed, break from the loop
