@@ -6,6 +6,8 @@ from imutils import face_utils
 from Adafruit_IO import *
 from gps import *
 from subprocess import check_output
+import signal
+# import sys
 import threading
 import numpy as np
 import RPi.GPIO as GPIO
@@ -37,8 +39,8 @@ def eye_aspect_ratio(eye):
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-p", "--shape-predictor", required=True,
-	help="path to facial landmark predictor")
+# ap.add_argument("-p", "--shape-predictor", required=True,
+# 	help="path to facial landmark predictor")
 # ap.add_argument("-a", "--alarm", type=str, default="",
 # 	help="path alarm .WAV file")
 ap.add_argument("-w", "--webcam", type=int, default=0,
@@ -50,12 +52,12 @@ args = vars(ap.parse_args())
 # frames the eye must be below the threshold for to set off the
 # alarm
 EYE_AR_THRESH = 0.28
-EYE_AR_CONSEC_FRAMES = 12 # utk Raspi
+EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
 
 # third constant for level 2 number of consecutive frames
-# pertambahan 0.5 detik = 3 frames --> 12 + 3 = 15
-EYE_AR_2ND_CONSEC_FRAMES = 15
+# pertambahan 0.5 detik = 3 frames --> 11 + 3 = 14
+EYE_AR_2ND_CONSEC_FRAMES = 14
 
 # initialize the frame counter as well as a boolean used to
 # indicate if the alarm is going off
@@ -72,20 +74,25 @@ tSendCreated1 = False
 tSendRunning1 = False
 tSendCreated2 = False
 tSendRunning2 = False
+sendCounter1 = 0
+sendCounter1 = 0
+sendCounter2 = 0
 
 # GPIO Buzzer
 signal1PIN = 27
 signal2PIN = 17
 GreenLED = 22
+RedLED = 23
 # Set PIN to output
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(signal1PIN,GPIO.OUT)
 GPIO.setup(signal2PIN,GPIO.OUT)
 GPIO.setup(GreenLED,GPIO.OUT)
+GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
-aio = Client('adipati27ma', 'aio_tPQr37Iff8ZYbsWjMvE2OX5fRarf')
+aio = "<Your AIO Key>"
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
@@ -96,8 +103,10 @@ def beep_beep_buzzer(pin):
 	global ALARM_L2
 	while ALARM_L2:
 		GPIO.output(pin,1)
+		GPIO.output(RedLED,1)
 		time.sleep(0.1)
 		GPIO.output(pin,0)
+		GPIO.output(RedLED,0)
 		time.sleep(0.1)
 
 def level_2_buzzer_active(signal):
@@ -151,37 +160,60 @@ def resetBlynk():
 def sendPositionData(gpsd, level):
 	global sendingData
 	global sentAdafruit
+	global sendCounter1
+	global sendCounter2
 	dataLevel = level
   
 	start = time.perf_counter() # for response time debugging
-	for x in range(10) :
-		dataGps = getPositionData(gpsd)
-		print(dataGps)
+	finish = False
+	try:
+		print('Application Started')
+		for x in range(10) :
+			dataGps = getPositionData(gpsd)
+			print(dataGps)
 
-		if dataGps :
-			if dataGps[0] is not 'Unknown' and dataGps[1] is not 'Unknown':
-				metaData = {
-					'lat': dataGps[0],
-					'lon': dataGps[1],
-					'ele': 0,
-					'created_at': None,
-				}
-				
-				sendBlynk = threading.Thread(target=sendToBlynk, args=[dataGps, dataLevel])
-				sendBlynk.start()
-				if (sentAdafruit == False):
-					sendAdafruit = threading.Thread(target=sendToAdafruit, args=[dataLevel, metaData])
-					sendAdafruit.start()
-					sentAdafruit = True
-				break
-		time.sleep(0.5)
-  
+			if dataGps :
+				if dataGps[0] is not 'Unknown' and dataGps[1] is not 'Unknown':
+					if(dataLevel == 1 or dataLevel == 0):
+						sendCounter1 += 1
+					if(dataLevel == 2):
+						sendCounter2 += 1
+					metaData = {
+						'lat': dataGps[0],
+						'lon': dataGps[1],
+						'ele': 0,
+						'created_at': None,
+					}
+					
+					sendBlynk = threading.Thread(target=sendToBlynk, args=[dataGps, dataLevel])
+					sendBlynk.start()
+					if (sentAdafruit == False):
+						sendAdafruit = threading.Thread(target=sendToAdafruit, args=[dataLevel, metaData])
+						sendAdafruit.start()
+						sentAdafruit = True
+					
+					if(dataLevel == 1 or dataLevel == 0):
+						if(sendCounter1 == 1):
+							finish = time.perf_counter() # for response time debugging
+					if(dataLevel == 1 or dataLevel == 0):
+						if(sendCounter1 == 2):
+							sendCounter1 = 0
+							break
+					if(dataLevel == 2):
+						if(sendCounter2 == 2):
+							sendCounter2 = 0
+							break
+			time.sleep(1)
+	except:
+		print('Application Closed')
+
 	blynk.virtual_write(1, 0)
 	sendingData = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
 	print("Data transfer stopped.")
-	# print(f'Get first data in {round(finish-start, 5)} second(s)') # for response time debugging
+	if(finish):
+		print(f'Get first data in {round(finish-start, 5)} second(s)') # for response time debugging
 	print(f'Finished ALL in {round(finishAll-start, 5)} second(s)') # for response time debugging
 
 # Send Thread Function
@@ -226,7 +258,29 @@ def my_write_handler(value) :
   sendThread = threading.Thread(target=sendPositionData, args=[gpsd, 0])
   sendThread.start()
 
+# def signal_handler(signal, frame):
+#     print('You pressed Ctrl+C!')
+#     sys.exit(0)
 
+# signal.signal(signal.SIGINT, signal_handler)
+# forever = threading.Event()
+# forever.wait()
+
+def keyboardInterruptHandler(signal, frame):
+		print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
+		# tampilkan info FPS
+		fps.stop()
+		print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+		print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+
+		# do a bit of cleanup
+		GPIO.output(GreenLED,0)
+		cv2.destroyAllWindows()
+		GPIO.cleanup()
+		vs.stop()
+		exit(0)
+
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 
 # Start Program-----
@@ -235,7 +289,8 @@ wifi_ip = check_output(['hostname', '-I'])
 # the facial landmark predictor
 print("[INFO] loading facial landmark predictor...")
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(args["shape_predictor"])
+# predictor = dlib.shape_predictor(args["shape_predictor"])
+predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # grab the indexes of the facial landmarks for the left and
 # right eye, respectively
@@ -286,6 +341,7 @@ if (wifi_ip is not None):
 				GPIO.output(signal1PIN,0)
 				level_2_buzzer_active(0)
 				# GPIO.output(signal2PIN,0)
+				GPIO.output(RedLED,0)
 				resetBlynk()
 
 		# loop over the face detections
@@ -335,6 +391,7 @@ if (wifi_ip is not None):
 							blynk.notify('Pengemudi mulai mengantuk!!')
 							blynk.virtual_write(0, 255)
 							createStartSendThread(1)
+							GPIO.output(RedLED,1)
 						
 						
 					# draw an alarm on the frame
@@ -360,6 +417,7 @@ if (wifi_ip is not None):
 					GPIO.output(signal1PIN,0)
 					level_2_buzzer_active(0)
 					# GPIO.output(signal2PIN,0)
+					GPIO.output(RedLED,0)
 
 					# Reset Blynk Data & Send Thread Variable
 					resetBlynk()
