@@ -92,7 +92,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
-aio = Client('adipati27ma', 'aio_siBs18iQ5tHpkTuiYWeabbttvqi7')
+aio = "<Your AIO Key>"
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
