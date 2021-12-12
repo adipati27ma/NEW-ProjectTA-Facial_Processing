@@ -52,12 +52,14 @@ args = vars(ap.parse_args())
 # frames the eye must be below the threshold for to set off the
 # alarm
 EYE_AR_THRESH = 0.3
-EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
+EYE_AR_CONSEC_FRAMES = 3 # utk Raspi 4.5 FPS (0.5 detik)
+# EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
 # EYE_AR_CONSEC_FRAMES = 48 # utk Laptop
 
 # third constant for level 2 number of consecutive frames
 # pertambahan 0.5 detik = 3 frames --> 11 + 3 = 14
-EYE_AR_2ND_CONSEC_FRAMES = 14
+# EYE_AR_2ND_CONSEC_FRAMES = 14
+EYE_AR_2ND_CONSEC_FRAMES = 6 # 3+3
 
 # initialize the frame counter as well as a boolean used to
 # indicate if the alarm is going off
@@ -92,7 +94,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
-aio = "<Your AIO Key>"
+aio = Client('USERNAME', 'AIO_KEY')
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
@@ -448,7 +450,7 @@ if (wifi_ip is not None):
 
 
 		# show the frame
-		cv2.imshow("Frame", frame) # comment if debugging is finish
+		# cv2.imshow("Frame", frame) # comment if don't want debugging
 		key = cv2.waitKey(1) & 0xFF
 
 		# if the `q` key was pressed, break from the loop
