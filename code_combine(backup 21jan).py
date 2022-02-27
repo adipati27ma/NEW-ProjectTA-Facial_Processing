@@ -51,7 +51,7 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.28
+EYE_AR_THRESH = 0.3
 # EYE_AR_CONSEC_FRAMES = 6 # utk Raspi 4.5 FPS (1 detik)
 EYE_AR_CONSEC_FRAMES = 3 # utk Raspi 4.5 FPS (0.5 detik)
 # EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
@@ -96,6 +96,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
+# blynk = BlynkLib.Blynk('pf_x-vnRLcFS2Wih5jB78lnsWYG92azJ')
 # aio = Client('USERNAME', 'AIO_KEY')
 aio = Client('username', 'aio-key')
 sendingData = False
@@ -135,17 +136,16 @@ def level_2_buzzer_active(signal):
 
 # GPS Function
 def getPositionData(gps):
-	nx = gps.next()
-	positionData = ["Unknown", "Unknown"]
+  nx = gps.next()
 	
-	# For a list of all supported classes and fields refer to:
-	# https://gpsd.gitlab.io/gpsd/gpsd_json.html
-	if nx['class'] == 'TPV':
-		latitude = getattr(nx,'lat', "Unknown")
-		longitude = getattr(nx,'lon', "Unknown")
-		positionData = [latitude, longitude]
+  # For a list of all supported classes and fields refer to:
+  # https://gpsd.gitlab.io/gpsd/gpsd_json.html
+  if nx['class'] == 'TPV':
+    latitude = getattr(nx,'lat', "Unknown")
+    longitude = getattr(nx,'lon', "Unknown")
+    positionData = [latitude, longitude]
 
-	return positionData
+    return positionData
 
 # Function sendToBlynk & sendToAdafruit
 def sendToBlynk(dataGps, dataLevel):
@@ -401,9 +401,7 @@ if (wifi_ip is not None):
 
 							# Turn on notify danger & Send Data GPS Level 1
 							blynk.notify('Pengemudi mulai mengantuk!!')
-							# blynk.log_event('notify', 'Pengemudi mulai mengantuk!!')
 							blynk.virtual_write(0, 255)
-							blynk.virtual_write(3, "1")
 							createStartSendThread(1)
 							GPIO.output(RedLED,1)
 						
@@ -413,12 +411,10 @@ if (wifi_ip is not None):
 						cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 					
 					if COUNTER >= EYE_AR_2ND_CONSEC_FRAMES:
-						# Turn on danger Level 2
 						print('ALARM ON~~~~~~~~~~~~~LEVEL 2')
 						cv2.putText(frame, "Level : 2", (340, 320),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 						level_2_buzzer_active(1)
-						blynk.virtual_write(3, "2")
 						# GPIO.output(signal2PIN,1)
 						
 						# Send Data GPS Level 2
@@ -459,7 +455,7 @@ if (wifi_ip is not None):
 
 
 		# show the frame
-		cv2.imshow("Frame", frame) # comment if don't want debugging
+		# cv2.imshow("Frame", frame) # comment if don't want debugging
 		key = cv2.waitKey(1) & 0xFF
 
 		# if the `q` key was pressed, break from the loop

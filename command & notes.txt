@@ -2,6 +2,12 @@ Command untuk menjalankan Program :
 python3 detect_drownsiness.py -p "shape_predictor_68_face_landmarks.dat" -a "Industrial Alarm.wav"
 
 python code_combine.py -p "shape_predictor_68_face_landmarks.dat"
+python detect_drownsiness.py -p "shape_predictor_68_face_landmarks.dat" -a "Industrial Alarm.wav"
+
+Recent command can used :
+workon cv  --> opsional, menginstall virtual environtment (tidak wajib)
+(harus menginstall terlebih dahulu package2)
+python code_combine.py --> file utama
 
 
 
