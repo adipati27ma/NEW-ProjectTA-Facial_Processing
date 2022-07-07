@@ -98,7 +98,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
 # blynk = BlynkLib.Blynk('pf_x-vnRLcFS2Wih5jB78lnsWYG92azJ')
 # aio = Client('USERNAME', 'AIO_KEY')
-aio = Client('username', 'aio-key')
+aio = Client('adipati27ma', 'aio_dFvr06uGjYiEJ6VOMdz1dxE5nRzZ')
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
