@@ -1,8 +1,3 @@
-import sys
- 
-# adding blynk-library-python to the system path
-sys.path.insert(0, '/home/pi/blynk-library-python')
-
 # import the necessary packages
 from scipy.spatial import distance as dist
 from imutils.video import VideoStream
@@ -56,7 +51,7 @@ args = vars(ap.parse_args())
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold for to set off the
 # alarm
-EYE_AR_THRESH = 0.27 # yang terakhir digunakan saat SHR
+EYE_AR_THRESH = 0.27
 # EYE_AR_CONSEC_FRAMES = 6 # utk Raspi 4.5 FPS (1 detik)
 EYE_AR_CONSEC_FRAMES = 3 # utk Raspi 4.5 FPS (0.5 detik)
 # EYE_AR_CONSEC_FRAMES = 11 # utk Raspi 4.5 FPS
@@ -100,7 +95,7 @@ GPIO.setup(GreenLED,GPIO.OUT)
 GPIO.setup(RedLED,GPIO.OUT)
 
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
-blynk = BlynkLib.Blynk('6fRGgiZx_HjIumonIflCb6dzZK00xm0e')
+blynk = BlynkLib.Blynk('1EWSq_x7ATOX7ejvCMx5OwNVF9RtOFIe')
 # aio = Client('USERNAME', 'AIO_KEY')
 aio = Client('adipati27ma', 'aio_dFvr06uGjYiEJ6VOMdz1dxE5nRzZ')
 sendingData = False
@@ -253,8 +248,7 @@ def createStartSendThread(dataLevel):
 				tSendRunning2 = True
 
 # Input from Blynk (will send data gps to Blynk)
-# @blynk.VIRTUAL_WRITE(1) # sudah tak ada, ganti yg baru??
-@blynk.on(1)
+@blynk.VIRTUAL_WRITE(1)
 def my_write_handler(value) :
   global sendingData
   intValue = int(value[0])
@@ -406,7 +400,7 @@ if (wifi_ip is not None):
 							# GPIO.output(signal2PIN,0)
 
 							# Turn on notify danger & Send Data GPS Level 1
-							# blynk.notify('Pengemudi mulai mengantuk!!')
+							blynk.notify('Pengemudi mulai mengantuk!!')
 							# blynk.log_event('notify', 'Pengemudi mulai mengantuk!!')
 							blynk.virtual_write(0, 255)
 							blynk.virtual_write(3, "1")
@@ -465,7 +459,7 @@ if (wifi_ip is not None):
 
 
 		# show the frame
-		# cv2.imshow("Frame", frame) # comment if don't want debugging
+		#cv2.imshow("Frame", frame) # comment if don't want debugging
 		key = cv2.waitKey(1) & 0xFF
 
 		# if the `q` key was pressed, break from the loop
