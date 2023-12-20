@@ -425,7 +425,6 @@ if (wifi_ip is not None):
 							cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 						level_2_buzzer_active(1)
 						blynk.virtual_write(3, "2")
-						blynk.virtual_write(4, "GPS not locking " + str(27))
 						# GPIO.output(signal2PIN,1)
 						
 						# Send Data GPS Level 2
