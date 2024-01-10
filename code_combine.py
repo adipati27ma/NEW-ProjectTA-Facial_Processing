@@ -160,7 +160,6 @@ def sendToBlynk(dataGps, dataLevel):
   # blynk.virtual_write(3, str(dataLevel)) // tidak diperlukan karena sudah ada dalam logic serial
 	blynk.log_event("drowsy_alert", "Pengemudi Mengantuk !!")
 	blynk.set_property(5, "url", "https://maps.google.com/?q=-6.946921167,107.661565833")
-	print("sendToBlynk Function")
 
 def sendToAdafruit(dataLevel, metaData = ""):
   # aio.send("sleepy-driver-data-history", dataLevel, metaData)
