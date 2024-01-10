@@ -86,7 +86,7 @@ tSendRunning2 = False
 sendCounter1 = 0
 sendCounter1 = 0
 sendCounter2 = 0
-currentLevelDanger = 0
+currentLevelDanger = 99
 
 # GPIO Buzzer
 signal1PIN = 27
@@ -155,9 +155,12 @@ def getPositionData(gps):
 
 # Function sendToBlynk & sendToAdafruit
 def sendToBlynk(dataGps, dataLevel):
-  blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta
-  blynk.virtual_write(4, str(dataGps))
+  # blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta
+  # blynk.virtual_write(4, str(dataGps))
   # blynk.virtual_write(3, str(dataLevel)) // tidak diperlukan karena sudah ada dalam logic serial
+	blynk.log_event("drowsy_alert", "Pengemudi Mengantuk !!")
+	blynk.set_property(5, "url", "https://maps.google.com/?q=-6.946921167,107.661565833")
+	print("sendToBlynk Function")
 
 def sendToAdafruit(dataLevel, metaData = ""):
   # aio.send("sleepy-driver-data-history", dataLevel, metaData)
@@ -180,7 +183,7 @@ def sendPositionData(gpsd, level):
 	start = time.perf_counter() # for response time debugging
 	finish = False
 	try:
-		print('Application Started')
+		print('Data Transmission Started')
 		for x in range(10) :
 			dataGps = getPositionData(gpsd)
 			print(dataGps)
@@ -218,9 +221,9 @@ def sendPositionData(gpsd, level):
 							break
 			time.sleep(0.2)
 	except:
-		print('Application Closed')
+		print('Data Transmission Closed')
 
-	blynk.virtual_write(1, 0)
+	# blynk.virtual_write(1, 0)
 	sendingData = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
@@ -236,6 +239,14 @@ def createStartSendThread(dataLevel):
 	global tSendRunning1
 	global tSendCreated2
 	global tSendRunning2
+
+	global currentLevelDanger
+
+	if (currentLevelDanger == 0):
+		blynk.virtual_write(0, 255)
+
+	# blynk.virtual_write(3, str(dataLevel))
+	
 	gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
 	
 	if (dataLevel == 1):
@@ -356,7 +367,10 @@ if (wifi_ip is not None):
 				level_2_buzzer_active(0)
 				# GPIO.output(signal2PIN,0)
 				GPIO.output(RedLED,0)
-				resetBlynk()
+				if(currentLevelDanger != 0):
+					# Reset Blynk Data & Send Thread Variable
+					resetBlynk()
+					currentLevelDanger = 0
 				cv2.putText(frame, "Tidak Terdeteksi Wajah", (10, 320),
 					cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
@@ -410,10 +424,15 @@ if (wifi_ip is not None):
 							# Turn on notify danger & Send Data GPS Level 1
 							# blynk.notify('Pengemudi mulai mengantuk!!')
 							# blynk.log_event('notify', 'Pengemudi mulai mengantuk!!')
-							blynk.virtual_write(0, 255)
-							blynk.virtual_write(3, "1")
-							createStartSendThread(1)
-							GPIO.output(RedLED,1)
+							
+							# blynk.virtual_write(0, 255)
+							# blynk.virtual_write(3, "1")
+
+							# saat currentLevelDanger 0 dan berpindah ke 1, kirimkan data 1x
+							if(currentLevelDanger != 1):
+								createStartSendThread(1) # create & start threading for sending data to blynk & adafruit
+								GPIO.output(RedLED,1)
+								currentLevelDanger = 1
 						
 						
 					# draw an alarm on the frame
@@ -426,11 +445,15 @@ if (wifi_ip is not None):
 						cv2.putText(frame, "Level : 2", (340, 320),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 						level_2_buzzer_active(1)
-						blynk.virtual_write(3, "2")
+						# blynk.virtual_write(3, "2")
 						# GPIO.output(signal2PIN,1)
 						
-						# Send Data GPS Level 2
-						createStartSendThread(2)
+						# saat currentLevelDanger 1 dan berpindah ke 2, kirimkan lagi data 1x
+						if(currentLevelDanger != 2):
+							# Send Data GPS Level 2
+							createStartSendThread(2)
+							currentLevelDanger = 2
+
 					
 
 			# otherwise, the eye aspect ratio is not below the blink
@@ -447,8 +470,11 @@ if (wifi_ip is not None):
 					# GPIO.output(signal2PIN,0)
 					GPIO.output(RedLED,0)
 
-					# Reset Blynk Data & Send Thread Variable
-					resetBlynk()
+					# saat currentLevelDanger 1 atau 2 dan berpindah ke 0, kirimkan lagi data 1x (reset)
+					if(currentLevelDanger != 0):
+						# Reset Blynk Data & Send Thread Variable
+						resetBlynk()
+						currentLevelDanger = 0
 					
 					tSendCreated1 = False
 					tSendRunning1 = False
