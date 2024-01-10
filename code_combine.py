@@ -86,6 +86,7 @@ tSendRunning2 = False
 sendCounter1 = 0
 sendCounter1 = 0
 sendCounter2 = 0
+currentLevelDanger = 0
 
 # GPIO Buzzer
 signal1PIN = 27
@@ -155,8 +156,8 @@ def getPositionData(gps):
 # Function sendToBlynk & sendToAdafruit
 def sendToBlynk(dataGps, dataLevel):
   blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta
-  # blynk.virtual_write(4, str(dataGps))
-  blynk.virtual_write(3, str(dataLevel))
+  blynk.virtual_write(4, str(dataGps))
+  # blynk.virtual_write(3, str(dataLevel)) // tidak diperlukan karena sudah ada dalam logic serial
 
 def sendToAdafruit(dataLevel, metaData = ""):
   # aio.send("sleepy-driver-data-history", dataLevel, metaData)
@@ -219,7 +220,7 @@ def sendPositionData(gpsd, level):
 	except:
 		print('Application Closed')
 
-	# blynk.virtual_write(1, 0)
+	blynk.virtual_write(1, 0)
 	sendingData = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
@@ -425,7 +426,7 @@ if (wifi_ip is not None):
 						cv2.putText(frame, "Level : 2", (340, 320),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 						level_2_buzzer_active(1)
-						# blynk.virtual_write(3, "2")
+						blynk.virtual_write(3, "2")
 						# GPIO.output(signal2PIN,1)
 						
 						# Send Data GPS Level 2
