@@ -155,21 +155,28 @@ def getPositionData(gps):
 
 # Function sendToBlynk & sendToAdafruit
 def sendToBlynk(dataGps, dataLevel):
-  # blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta
+	lat = "-6.966222222" # default value
+	lon = "107.666222222"
+
+	if dataGps[0] is not 'Unknown' and dataGps[1] is not 'Unknown':
+		lat = str(dataGps[0])
+		lon = str(dataGps[1])
+	
+  # blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta, sudah tidak digunakan
   # blynk.virtual_write(4, str(dataGps))
   # blynk.virtual_write(3, str(dataLevel)) // tidak diperlukan karena sudah ada dalam logic serial
-	blynk.log_event("drowsy_alert", "Pengemudi Mengantuk !!")
-	blynk.set_property(5, "url", "https://maps.google.com/?q=-6.946921167,107.661565833")
+	blynk.set_property(5, "url", f"https://maps.google.com/?q={lat},{lon}")
+	print(f"https://maps.google.com/?q={lat},{lon}") # for debug
+	print(f"data GPS: {dataGps[0]}") # for debug
 
 def sendToAdafruit(dataLevel, metaData = ""):
   # aio.send("sleepy-driver-data-history", dataLevel, metaData)
 	print("Adafruit sent")
 	
 def resetBlynk():
-	# blynk.virtual_write(4, str(' '))
+	# blynk.virtual_write(4, str(' ')) # tidak digunakan karena lat/lon terakhir akan ditampilkan
 	blynk.virtual_write(3, str(' '))
-	# Turn off Danger LED
-	blynk.virtual_write(0, 0)
+	blynk.virtual_write(0, 0) # Turn off Danger LED
 
 # Function send Pos Data
 def sendPositionData(gpsd, level):
@@ -181,6 +188,7 @@ def sendPositionData(gpsd, level):
   
 	start = time.perf_counter() # for response time debugging
 	finish = False
+	
 	try:
 		print('Data Transmission Started')
 		for x in range(10) :
@@ -222,7 +230,7 @@ def sendPositionData(gpsd, level):
 	except:
 		print('Data Transmission Closed')
 
-	# blynk.virtual_write(1, 0)
+	# blynk.virtual_write(1, 0) # mematikan button "GetData" Blynk
 	sendingData = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
@@ -243,6 +251,7 @@ def createStartSendThread(dataLevel):
 
 	if (currentLevelDanger == 0):
 		blynk.virtual_write(0, 255)
+		blynk.log_event("drowsy_alert", "Pengemudi Mengantuk !!")
 
 	# blynk.virtual_write(3, str(dataLevel))
 	
