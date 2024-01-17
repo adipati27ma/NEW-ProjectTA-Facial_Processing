@@ -103,7 +103,7 @@ GPIO.setup(RedLED,GPIO.OUT)
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('6fRGgiZx_HjIumonIflCb6dzZK00xm0e')
 # aio = Client('USERNAME', 'AIO_KEY')
-aio = Client('adipati27ma', 'aio_dFvr06uGjYiEJ6VOMdz1dxE5nRzZ')
+aio = Client('adipati27ma', 'aio_CXrC57WZEoLYapssYxU4QsHqxD6L')
 sendingData = False
 sentAdafruit = False
 # End of Initialize for IoT
@@ -170,7 +170,7 @@ def sendToBlynk(dataGps, dataLevel):
 	print(f"data GPS: {dataGps[0]}") # for debug
 
 def sendToAdafruit(dataLevel, metaData = ""):
-  # aio.send("sleepy-driver-data-history", dataLevel, metaData)
+	aio.send("sleepy-driver-data-history", dataLevel, metaData)
 	print("Adafruit sent")
 	
 def resetBlynk():
@@ -190,7 +190,7 @@ def sendPositionData(gpsd, level):
 	finish = False
 	
 	try:
-		print('Data Transmission Started')
+		print('Data transmission started')
 		for x in range(10) :
 			dataGps = getPositionData(gpsd)
 			print(dataGps)
@@ -228,13 +228,14 @@ def sendPositionData(gpsd, level):
 							break
 			time.sleep(0.2)
 	except:
-		print('Data Transmission Closed')
+		print('Transmission failed!')
 
-	# blynk.virtual_write(1, 0) # mematikan button "GetData" Blynk
-	sendingData = False
+	if sendingData == True:
+		blynk.virtual_write(1, 0) # mematikan button "GetData" Blynk
+		sendingData = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
-	print("Data transfer stopped.")
+	print("Data transmission stopped.")
 	if(finish):
 		print(f'Get first data in {round(finish-start, 5)} second(s)') # for response time debugging
 	print(f'Finished ALL in {round(finishAll-start, 5)} second(s)') # for response time debugging
@@ -275,21 +276,27 @@ def createStartSendThread(dataLevel):
 
 # Input from Blynk (will send data gps to Blynk)
 # @blynk.VIRTUAL_WRITE(1) # sudah tak ada, ganti yg baru??
-@blynk.on(1)
-def my_write_handler(value) :
-  global sendingData
-  intValue = int(value[0])
-  if sendingData :
-    blynk.virtual_write(1, 1)
-    return
-  if intValue == 0 : return
+@blynk.on("V1") # old blynk get data
+def v1_write_handler(value) :
+	global sendingData
+	intValue = int(value[0])
+	if sendingData :
+		blynk.virtual_write(1, 1)
+		return
+	if intValue == 0 : return
 
-  gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
-  print("Sending data...")
-  sendingData = True
+	gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
+	print("Sending data...")
+	sendingData = True
 
-  sendThread = threading.Thread(target=sendPositionData, args=[gpsd, 0])
-  sendThread.start()
+	if getPositionData(gpsd)[0] != "Unknown":
+		sendThread = threading.Thread(target=sendPositionData, args=[gpsd, 0])
+		sendThread.start()
+		sendThread.join()
+	else:
+		print("Sending data failed!")
+		sendingData = False
+		blynk.virtual_write(1, 0)
 
 # def signal_handler(signal, frame):
 #     print('You pressed Ctrl+C!')
