@@ -103,8 +103,9 @@ GPIO.setup(RedLED,GPIO.OUT)
 # Initialize Blynk, Adafruit IO, & State for GPS (IoT)
 blynk = BlynkLib.Blynk('6fRGgiZx_HjIumonIflCb6dzZK00xm0e')
 # aio = Client('USERNAME', 'AIO_KEY')
-aio = Client('adipati27ma', 'aio_CXrC57WZEoLYapssYxU4QsHqxD6L')
+aio = Client('adipati27ma', 'aio_Qzoj304MOq9YV9C4OcbkC6wrYcTI')
 sendingData = False
+sentBlynk = False
 sentAdafruit = False
 # End of Initialize for IoT
 
@@ -161,13 +162,14 @@ def sendToBlynk(dataGps, dataLevel):
 	if dataGps[0] is not 'Unknown' and dataGps[1] is not 'Unknown':
 		lat = str(dataGps[0])
 		lon = str(dataGps[1])
+
+	print(f"https://maps.google.com/?q={lat},{lon}") # for debug
+	print(f"data GPS: {dataGps[0]} , {dataGps[1]}") # for debug
 	
   # blynk.virtual_write(5, 1, dataGps[0], dataGps[1], "value") # untuk maps/peta, sudah tidak digunakan
-  # blynk.virtual_write(4, str(dataGps))
-  # blynk.virtual_write(3, str(dataLevel)) // tidak diperlukan karena sudah ada dalam logic serial
+	blynk.virtual_write(4, str(dataGps))
+	# blynk.virtual_write(3, str(dataLevel)) # tidak diperlukan karena sudah ada dalam logic serial
 	blynk.set_property(5, "url", f"https://maps.google.com/?q={lat},{lon}")
-	print(f"https://maps.google.com/?q={lat},{lon}") # for debug
-	print(f"data GPS: {dataGps[0]}") # for debug
 
 def sendToAdafruit(dataLevel, metaData = ""):
 	aio.send("sleepy-driver-data-history", dataLevel, metaData)
@@ -181,6 +183,7 @@ def resetBlynk():
 # Function send Pos Data
 def sendPositionData(gpsd, level):
 	global sendingData
+	global sentBlynk
 	global sentAdafruit
 	global sendCounter1
 	global sendCounter2
@@ -207,10 +210,15 @@ def sendPositionData(gpsd, level):
 						'ele': 0,
 						'created_at': None,
 					}
-					
-					sendBlynk = threading.Thread(target=sendToBlynk, args=[dataGps, dataLevel])
-					sendBlynk.start()
+					print(f"not unknown data: {dataGps}")
+					print(f"sentBlynk={sentBlynk} ; sentAdafruit = {sentAdafruit}")
+					if (sentBlynk == False):
+						print("blynk thread if running....")
+						sendBlynk = threading.Thread(target=sendToBlynk, args=[dataGps, dataLevel])
+						sendBlynk.start()
+						sentBlynk = True
 					if (sentAdafruit == False):
+						print("adafruit thread if running....")
 						sendAdafruit = threading.Thread(target=sendToAdafruit, args=[dataLevel, metaData])
 						sendAdafruit.start()
 						sentAdafruit = True
@@ -228,11 +236,12 @@ def sendPositionData(gpsd, level):
 							break
 			time.sleep(0.2)
 	except:
-		print('Transmission failed!')
+		print('Transmission accidentally stopped!')
 
 	if sendingData == True:
 		blynk.virtual_write(1, 0) # mematikan button "GetData" Blynk
 		sendingData = False
+	sentBlynk = False
 	sentAdafruit = False
 	finishAll = time.perf_counter()
 	print("Data transmission stopped.")
@@ -254,7 +263,7 @@ def createStartSendThread(dataLevel):
 		blynk.virtual_write(0, 255)
 		blynk.log_event("drowsy_alert", "Pengemudi Mengantuk !!")
 
-	# blynk.virtual_write(3, str(dataLevel))
+	blynk.virtual_write(3, str(dataLevel))
 	
 	gpsd = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
 	
@@ -289,14 +298,14 @@ def v1_write_handler(value) :
 	print("Sending data...")
 	sendingData = True
 
-	if getPositionData(gpsd)[0] != "Unknown":
-		sendThread = threading.Thread(target=sendPositionData, args=[gpsd, 0])
-		sendThread.start()
-		sendThread.join()
-	else:
-		print("Sending data failed!")
-		sendingData = False
-		blynk.virtual_write(1, 0)
+	# if getPositionData(gpsd)[0] != "Unknown":
+	sendThread = threading.Thread(target=sendPositionData, args=[gpsd, 0])
+	sendThread.start()
+	sendThread.join()
+	# else:
+	#	print("Sending data failed!")
+	#	sendingData = False
+	#	blynk.virtual_write(1, 0)
 
 # def signal_handler(signal, frame):
 #     print('You pressed Ctrl+C!')
